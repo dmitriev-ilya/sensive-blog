@@ -33,16 +33,18 @@ def index(request):
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
     fresh_posts = Post.objects.order_by('published_at')
-    most_fresh_posts = list(fresh_posts)[-5:]
+    most_fresh_posts = fresh_posts[:5]
 
     tags = Tag.objects.annotate(tags_count=Count('posts'))
     most_popular_tags = tags.order_by('-tags_count')[:5]
 
     context = {
         'most_popular_posts': [
-            serialize_post(post) for post in most_popular_posts
+            serialize_post(post) for post in most_popular_posts.prefetch_related('author')
         ],
-        'page_posts': [serialize_post(post) for post in most_fresh_posts],
+        'page_posts': [
+            serialize_post(post) for post in most_fresh_posts.prefetch_related('author')
+        ],
         'popular_tags': [serialize_tag(tag) for tag in most_popular_tags],
     }
     return render(request, 'index.html', context)
