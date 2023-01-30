@@ -108,6 +108,12 @@ def tag_filter(request, tag_title):
     related_posts = tag.posts \
         .select_related('author') \
         .prefetch_tags() \
+        .popular()[:5] \
+        .fetch_with_comments_count()
+
+    related_posts = tag.posts \
+        .select_related('author') \
+        .prefetch_tags() \
         .popular()[:20] \
         .fetch_with_comments_count()
 
