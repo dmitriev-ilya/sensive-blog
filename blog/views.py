@@ -25,14 +25,8 @@ def serialize_tag(tag):
     }
 
 
-def get_posts():
-    posts = Post.objects.select_related('author') \
-        .prefetch_related(Prefetch('tags', queryset=Tag.objects.popular()))
-    return posts.popular()
-
-
 def index(request):
-    posts = get_posts()
+    posts = Post.objects.prefetch_tags().prefetch_authors().popular()
 
     most_popular_posts = posts[:5].fetch_with_comments_count()
 
@@ -53,7 +47,7 @@ def index(request):
 
 
 def post_detail(request, slug):
-    posts = get_posts()
+    posts = Post.objects.prefetch_tags().prefetch_authors().popular()
 
     post = get_object_or_404(posts, slug=slug)
 
@@ -99,11 +93,15 @@ def tag_filter(request, tag_title):
 
     most_popular_tags = tags[:5]
 
-    most_popular_posts = get_posts()[:5].fetch_with_comments_count()
+    most_popular_posts = Post.objects \
+        .prefetch_tags() \
+        .prefetch_authors() \
+        .popular()[:5] \
+        .fetch_with_comments_count()
 
     related_posts = tag.posts \
-        .select_related('author') \
-        .prefetch_related(Prefetch('tags', queryset=Tag.objects.popular())) \
+        .prefetch_authors() \
+        .prefetch_tags() \
         .popular()[:20] \
         .fetch_with_comments_count()
 
