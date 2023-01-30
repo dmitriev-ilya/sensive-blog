@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.urls import reverse
 from django.contrib.auth.models import User
 
@@ -9,11 +9,11 @@ class PostQuerySet(models.QuerySet):
     def year(self, year):
         posts_at_year = self.filter(published_at__year=year).order_by('published_at')
         return posts_at_year
-    
+
     def popular(self):
         popular_posts = self.annotate(likes_count=Count('likes')).order_by('-likes_count')
         return popular_posts
-    
+
     def fetch_with_comments_count(self):
         """Метод оптимизирует использование двух annotate: данные запроса не разрастаются пропорционально
         количеству группировок, возвращённых предыдущим annotate."""
@@ -24,6 +24,9 @@ class PostQuerySet(models.QuerySet):
         for post in self:
             post.comments_count = count_for_id[post.id]
         return self
+
+    def prefetch_tags(self):
+        return self.prefetch_related(Prefetch('tags', queryset=Tag.objects.popular()))  
 
 
 class TagQuerySet(models.QuerySet):
@@ -54,7 +57,7 @@ class Post(models.Model):
         'Tag',
         related_name='posts',
         verbose_name='Теги')
-    
+
     objects = PostQuerySet.as_manager()
 
     def __str__(self):
